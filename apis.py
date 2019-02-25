@@ -42,7 +42,9 @@ def getStudent(username):
     else:
         app.config['BASIC_AUTH_USERNAME'] = student.username
         app.config['BASIC_AUTH_PASSWORD'] = student.password
-        password = request.json['password']
+        password_enc = request.data
+        password_dec = decryption(Config.enc_key, password_enc)
+        password = password_dec.decode()
 
         if basic_auth.check_credentials(username, password):
             student_schema = StudentSchema()
@@ -64,18 +66,18 @@ def updateStudent(username):
     else:
         app.config['BASIC_AUTH_USERNAME'] = student.username
         app.config['BASIC_AUTH_PASSWORD'] = student.password
-        password = request.json['password']
+        student_data_enc = request.data
+        student_data_dec = decryption(Config.enc_key, student_data_enc)
+        student_json = json.loads(student_data_dec.decode())
+        old_password = student_json['old_password']
 
-        if basic_auth.check_credentials(username, password):
-            student_data_enc = request.data
-            student_data_dec = decryption(Config.enc_key, student_data_enc)
-            student_json = json.loads(student_data_dec.decode())
-            password = student_json['password']
+        if basic_auth.check_credentials(username, old_password):
+            new_password = student_json['new_password']
             name = student_json['name']
             degree = student_json['degree']
             cgpa = student_json['cgpa']
 
-            student.password = password
+            student.password = new_password
             student.name = name
             student.degree = degree
             student.cgpa = cgpa
@@ -93,7 +95,9 @@ def deleteStudent(username):
     else:
         app.config['BASIC_AUTH_USERNAME'] = student.username
         app.config['BASIC_AUTH_PASSWORD'] = student.password
-        password = request.json['password']
+        password_enc = request.data
+        password_dec = decryption(Config.enc_key, password_enc)
+        password = password_dec.decode()
 
         if basic_auth.check_credentials(username, password):
             db.session.delete(student)
